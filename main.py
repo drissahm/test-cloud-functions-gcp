@@ -33,7 +33,11 @@ def hello_gcs(event, context):
     df.to_gbq('cih_monitoring.bank_statement_raw_temp', 'ma-cl-cih', chunksize=10000, if_exists='replace', table_schema=my_schema)
 
     # insert the temp table to the permanent table
-    sql_command = """INSERT INTO cih_monitoring.bank_statement_raw 
+    insert_command = """INSERT INTO cih_monitoring.bank_statement_raw 
     SELECT * FROM cih_monitoring.bank_statement_raw_temp;"""
+    query_job = client_bq.query(insert_command)
 
-    query_job = client_bq.query(sql_command)
+    # drop duplicates of the permanent table
+    drop_duplicates_command = """CREATE OR REPLACE TABLE cih_monitoring.bank_statement_raw
+    AS SELECT DISTINCT * FROM cih_monitoring.bank_statement_raw;"""
+    query_job_2 = client_bq.query(drop_duplicates_command)
